@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentStreak — Daily Check-In for Agent ID Holders</title>
+<meta name="description" content="AgentStreak is a sybil-proof daily check-in for Agent ID holders. Check in once a day, build your streak, earn points, and level up.">
+<style>
+  :root{
+    --bg:#0b1020; --card:#141a2e; --card2:#1a2140; --text:#eef1ff; --muted:#9aa5c7;
+    --accent:#6c8cff; --accent2:#38d6a5; --warn:#ffb84d; --bad:#ff7a7a; --line:#26305a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+  a{color:var(--accent)}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:10px 0 6px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#081018}
+  h1{font-size:26px;margin:0}
+  .tagline{color:var(--muted);margin:2px 0 0;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:14px 0}
+  .card h2{margin:0 0 10px;font-size:17px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .spacer{flex:1}
+  button{appearance:none;border:0;border-radius:10px;padding:11px 18px;font-size:15px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff}
+  button:hover{filter:brightness(1.08)}
+  button:disabled{background:#39406b;color:#aab;cursor:not-allowed;filter:none}
+  button.secondary{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+  select{background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--line)}
+  .badge.ok{background:rgba(56,214,165,.15);color:var(--accent2)}
+  .badge.no{background:rgba(255,122,122,.12);color:var(--bad)}
+  .badge.warn{background:rgba(255,184,77,.12);color:var(--warn)}
+  .addr{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;word-break:break-all}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:640px){.grid{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .stat .num{font-size:24px;font-weight:800}
+  .stat .lbl{color:var(--muted);font-size:13px}
+  .progress{height:10px;background:#0d1330;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:8px}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%}
+  .muted{color:var(--muted)} .small{font-size:13px}
+  .status{font-size:14px;margin-top:10px;min-height:20px}
+  .status.error{color:var(--bad)} .status.good{color:var(--accent2)}
+  ul.events{list-style:none;margin:0;padding:0}
+  ul.events li{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  ul.events li:last-child{border-bottom:0}
+  .note{background:rgba(255,184,77,.08);border:1px solid rgba(255,184,77,.35);border-radius:12px;padding:12px 14px;font-size:14px}
+  footer{color:var(--muted);font-size:13px;margin-top:22px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="logo">A</div>
+      <div>
+        <h1>AgentStreak</h1>
+        <p class="tagline">Daily check-in for Agent ID holders. One person, one Agent ID, one streak.</p>
+      </div>
+    </div>
+    <div class="row">
+      <label class="small muted" for="networkSelect">Network</label>
+      <select id="networkSelect">
+        <option value="testnet">BSC Testnet (97)</option>
+        <option value="mainnet">BSC Mainnet (56)</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>Your wallet</h2>
+    <div class="row">
+      <button id="connectBtn">Connect Wallet</button>
+      <button id="switchBtn" class="secondary hidden">Switch Network</button>
+      <span id="networkBadge" class="badge warn">Not connected</span>
+      <span class="spacer"></span>
+      <span id="holderBadge" class="badge">Agent ID: unknown</span>
+    </div>
+    <p class="addr" id="walletAddress">No wallet connected yet.</p>
+    <p class="muted small">Connect with your browser wallet extension. You stay in control — every transaction is shown and confirmed in your own wallet.</p>
+    <div id="connectStatus" class="status" role="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>My streak</h2>
+    <div class="grid">
+      <div class="stat"><div class="num" id="statStreak">–</div><div class="lbl">Current streak (days)</div></div>
+      <div class="stat"><div class="num" id="statTotal">–</div><div class="lbl">Total check-ins</div></div>
+      <div class="stat"><div class="num" id="statPoints">–</div><div class="lbl">Points</div></div>
+      <div class="stat"><div class="num" id="statLevel">–</div><div class="lbl">Level</div></div>
+    </div>
+    <p class="small muted" id="levelProgressText">Connect your wallet to see your level progress.</p>
+    <div class="progress"><div id="levelProgressBar"></div></div>
+    <div class="row" style="margin-top:16px">
+      <button id="checkInBtn" disabled>Check In Today</button>
+      <span id="checkInReason" class="small muted">Connect your wallet first.</span>
+    </div>
+    <div id="checkInStatus" class="status" role="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>Community stats</h2>
+    <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="stat"><div class="num" id="globalUsers">–</div><div class="lbl">Unique agents checked in</div></div>
+      <div class="stat"><div class="num" id="globalCheckIns">–</div><div class="lbl">Total check-ins</div></div>
+    </div>
+    <p class="small muted" id="contractNote"></p>
+  </div>
+
+  <div class="card">
+    <h2>Recent check-ins</h2>
+    <ul class="events" id="recentList">
+      <li><span class="muted">Loading recent check-ins…</span></li>
+    </ul>
+  </div>
+
+  <div class="note">
+    Points are for fun and community streaks — they have no monetary value.
+    AgentStreak never asks for approvals and never moves your funds; a check-in is a single small transaction you confirm yourself.
+  </div>
+
+  <div class="card">
+    <h2>How it works</h2>
+    <ul class="small" style="margin:0;padding-left:18px">
+      <li>Only Agent ID holders can check in — your wallet is checked on-chain before the button unlocks.</li>
+      <li>One check-in per day (UTC). Check in on consecutive days to grow your streak; miss a day and the streak restarts at 1.</li>
+      <li>Each check-in earns 10 points plus a streak bonus of up to 20 points.</li>
+      <li>Levels: Starter at 1 check-in, Regular at 7, Committed at 14, Core Agent at 30.</li>
+      <li>No Agent ID yet? Agent IDs are claimed inside the Binance App: Wallet &gt; homepage banner &gt; Agent ID.</li>
+    </ul>
+  </div>
+
+  <footer>
+    AgentStreak is an independent community project. Contract and network details are loaded from the public configuration on this page.
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

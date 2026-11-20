@@ -1,0 +1,1 @@
+{"description":"AgentStreak — sybil-proof daily loyalty protocol for AI agents, gated by Binance Agent ID","devDependencies":{"@nomicfoundation/hardhat-toolbox":"^5.0.0","hardhat":"^2.22.19"},"license":"MIT","name":"agentstreak","private":true,"scripts":{"compile":"hardhat compile","test":"hardhat test"},"version":"1.0.0"}
